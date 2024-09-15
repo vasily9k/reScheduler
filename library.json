@@ -1,6 +1,6 @@
 {
   "name": "reScheduler",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Library for working with schedules",
   "keywords": "esp32",
   "authors":
@@ -9,6 +9,11 @@
       "name": "Alexander Razzhivin",
       "email": "kotyara12@yandex.ru",
       "url": "https://kotyara12.ru"
+    },
+    {
+      "name": "Vasily K",
+      "email": "vasily9k@gmail.com",
+      "url": "https://github.com/vasily9k"
     }
   ],
   "license": "MIT",
