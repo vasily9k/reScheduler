@@ -33,7 +33,7 @@ static schedulerItemHeadHandle_t schedulerItems = nullptr;
 
 static bool _handlersRegistered = false;
 static esp_timer_handle_t _schedulerTimerMain = nullptr;
-#if CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
+#if ! defined(CONFIG_MQTT1_OFF) && (CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE)
 static esp_timer_handle_t _schedulerTimerSysInfo = nullptr;
 #endif // CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
 #if CONFIG_MQTT_TASKLIST_ENABLE
@@ -189,10 +189,10 @@ static void schedulerTimerMainExec(struct tm* nowS, bool isCorrectTime)
     sysinfoFixDateTime(nowS);
 
     // Post generated strings with date and time
-    #if CONFIG_MQTT_TIME_ENABLE
+    #if ! defined(CONFIG_MQTT1_OFF) && CONFIG_MQTT_TIME_ENABLE
     mqttPublishDateTime(nowS);
-    #endif // CONFIG_MQTT_TIME_ENABLE
-
+    #endif // ! defined(CONFIG_MQTT1_OFF) && CONFIG_MQTT_TIME_ENABLE
+    
     // Check schedule list
     if (schedulerItems) {
       schedulerItemHandle_t item;
@@ -266,9 +266,7 @@ static void schedulerTimerMainDelete()
 // -----------------------------------------------------------------------------------------------------------------------
 // ----------------------------------------------------- Status Timer ----------------------------------------------------
 // -----------------------------------------------------------------------------------------------------------------------
-
-#if CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
-
+#if ! defined(CONFIG_MQTT1_OFF) && (CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE)
 static void schedulerTimerSysInfoExec(void* arg)
 {
   sysinfoPublishSysInfo();
@@ -328,12 +326,13 @@ static void schedulerTimerSysInfoDelete()
   };
 }
 
-#endif // CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
+#endif // ! defined(CONFIG_MQTT1_OFF) && (CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE)
 
 // -----------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------- TaskList Timer ---------------------------------------------------
 // -----------------------------------------------------------------------------------------------------------------------
 
+#ifndef CONFIG_MQTT1_OFF
 #if CONFIG_MQTT_TASKLIST_ENABLE
 
 static void schedulerTimerTasksExec(void* arg)
@@ -396,7 +395,7 @@ static void schedulerTimerTasksDelete()
 }
 
 #endif // CONFIG_MQTT_TASKLIST_ENABLE
-
+#endif // CONFIG_MQTT1_OFF
 // -----------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------- Еvent handlers ---------------------------------------------------
 // -----------------------------------------------------------------------------------------------------------------------
@@ -450,7 +449,7 @@ bool schedulerEventHandlerRegister()
     #if defined(CONFIG_SILENT_MODE_ENABLE) && CONFIG_SILENT_MODE_ENABLE
       _handlersRegistered = _handlersRegistered && eventHandlerRegister(RE_PARAMS_EVENTS, RE_PARAMS_CHANGED, &schedulerEventHandlerParams, nullptr);
     #endif // defined(CONFIG_SILENT_MODE_ENABLE) && CONFIG_SILENT_MODE_ENABLE
-    #if CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
+    #if ! defined(CONFIG_MQTT1_OFF) && (CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE)
       _handlersRegistered = _handlersRegistered && sysinfoEventHandlerRegister();
     #endif // CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
   };
@@ -466,7 +465,7 @@ void schedulerEventHandlerUnregister()
     #if defined(CONFIG_SILENT_MODE_ENABLE) && CONFIG_SILENT_MODE_ENABLE
       eventHandlerUnregister(RE_PARAMS_EVENTS, RE_PARAMS_CHANGED, &schedulerEventHandlerParams);
     #endif // defined(CONFIG_SILENT_MODE_ENABLE) && CONFIG_SILENT_MODE_ENABLE
-    #if CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
+    #if ! defined(CONFIG_MQTT1_OFF) && (CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE)
       sysinfoEventHandlerUnregister();
     #endif // CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
   };
@@ -484,10 +483,10 @@ bool schedulerStart(bool createSuspended)
     #if defined(CONFIG_SILENT_MODE_ENABLE) && CONFIG_SILENT_MODE_ENABLE
       silentModeRegister();
     #endif // defined(CONFIG_SILENT_MODE_ENABLE) && CONFIG_SILENT_MODE_ENABLE
-    #if CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
+    #if ! defined(CONFIG_MQTT1_OFF) && (CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE)
       ret = ret && schedulerTimerSysInfoCreate(createSuspended);
     #endif // CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
-    #if CONFIG_MQTT_TASKLIST_ENABLE
+    #if ! defined(CONFIG_MQTT1_OFF) && CONFIG_MQTT_TASKLIST_ENABLE
       ret = ret && schedulerTimerTasksCreate(createSuspended);
     #endif // CONFIG_MQTT_TASKLIST_ENABLE
   };
@@ -500,10 +499,10 @@ bool schedulerStart(bool createSuspended)
 bool schedulerSuspend()
 {
   bool ret = true;
-  #if CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
+  #if ! defined(CONFIG_MQTT1_OFF) && (CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE)
     ret = ret && schedulerTimerSysInfoStop();
   #endif // CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
-    #if CONFIG_MQTT_TASKLIST_ENABLE
+    #if ! defined(CONFIG_MQTT1_OFF) && CONFIG_MQTT_TASKLIST_ENABLE
       ret = ret && schedulerTimerTasksStop();
     #endif // CONFIG_MQTT_TASKLIST_ENABLE
   return ret;
@@ -512,10 +511,10 @@ bool schedulerSuspend()
 bool schedulerResume()
 {
   bool ret = true;
-  #if CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
+  #if ! defined(CONFIG_MQTT1_OFF) && (CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE)
     ret = ret && schedulerTimerSysInfoStart();
   #endif // CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
-    #if CONFIG_MQTT_TASKLIST_ENABLE
+    #if ! defined(CONFIG_MQTT1_OFF) && CONFIG_MQTT_TASKLIST_ENABLE
       ret = ret && schedulerTimerTasksStart();
     #endif // CONFIG_MQTT_TASKLIST_ENABLE
   return ret;
@@ -523,10 +522,10 @@ bool schedulerResume()
 
 void schedulerDelete()
 {
-  #if CONFIG_MQTT_TASKLIST_ENABLE
+  #if ! defined(CONFIG_MQTT1_OFF) && CONFIG_MQTT_TASKLIST_ENABLE
     schedulerTimerTasksDelete();
   #endif // CONFIG_MQTT_TASKLIST_ENABLE
-  #if CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
+  #if ! defined(CONFIG_MQTT1_OFF) && (CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE)
     schedulerTimerSysInfoDelete();
   #endif // CONFIG_MQTT_STATUS_ONLINE || CONFIG_MQTT_SYSINFO_ENABLE
   schedulerEventHandlerUnregister();
